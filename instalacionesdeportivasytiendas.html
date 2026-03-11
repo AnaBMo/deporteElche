@@ -1,0 +1,863 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Instalaciones Deportivas de Elche - Completo</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f5f5f5;
+            overflow: hidden;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #2563eb 0%, #3b82f6 100%);
+            color: white;
+            padding: 15px 20px;
+            text-align: center;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .header h1 {
+            font-size: 24px;
+            margin-bottom: 3px;
+        }
+        
+        .header p {
+            font-size: 13px;
+            opacity: 0.9;
+        }
+        
+        .main-container {
+            display: flex;
+            height: calc(100vh - 80px);
+        }
+        
+        /* PANEL LATERAL IZQUIERDO */
+        .sidebar {
+            width: 380px;
+            background: white;
+            overflow-y: auto;
+            box-shadow: 2px 0 10px rgba(0,0,0,0.1);
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .sidebar::-webkit-scrollbar {
+            width: 8px;
+        }
+        
+        .sidebar::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+        
+        .sidebar::-webkit-scrollbar-thumb {
+            background: #888;
+            border-radius: 4px;
+        }
+        
+        .sidebar::-webkit-scrollbar-thumb:hover {
+            background: #555;
+        }
+        
+        /* MAPA A LA DERECHA */
+        .map-container {
+            flex: 1;
+            position: relative;
+        }
+        
+        #map {
+            width: 100%;
+            height: 100%;
+        }
+        
+        /* SECCIONES DE FILTROS */
+        .filter-section {
+            padding: 15px;
+            border-bottom: 1px solid #e5e7eb;
+        }
+        
+        .filter-section:last-child {
+            border-bottom: none;
+        }
+        
+        .filter-title {
+            font-size: 13px;
+            font-weight: 700;
+            color: #374151;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .filter-subtitle {
+            font-size: 11px;
+            color: #6b7280;
+            font-weight: 400;
+            margin-left: 8px;
+        }
+        
+        /* BOTONES DE FILTRO */
+        .filter-btn {
+            padding: 8px 14px;
+            border: 2px solid #e5e7eb;
+            border-radius: 6px;
+            background: white;
+            cursor: pointer;
+            font-size: 12px;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            margin: 3px;
+            width: calc(50% - 6px);
+        }
+        
+        .filter-btn:hover {
+            background: #f9fafb;
+            border-color: #d1d5db;
+        }
+        
+        .filter-btn.active {
+            background: #93c5fd;
+            color: #1e3a8a;
+            border-color: #93c5fd;
+        }
+
+        .filter-btn.active#btn-tipo-municipal {
+            background: #86efac;
+            color: #065f46;
+            border-color: #86efac;
+        }
+
+        .filter-btn.active#btn-tipo-privado {
+            background: #93c5fd;
+            color: #1e3a8a;
+            border-color: #93c5fd;
+        }
+
+        .filter-btn.active#btn-tipo-tienda {
+            background: #fde68a;
+            color: #78350f;
+            border-color: #fde68a;
+        }
+
+        .filter-btn.active#btn-todas {
+            background: white;
+            color: #374151;
+            border-color: #d1d5db;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1), inset 0 -2px 4px rgba(0,0,0,0.05);
+        }
+
+        .filter-btn.active#btn-todas-categorias {
+            background: white;
+            color: #374151;
+            border-color: #d1d5db;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1), inset 0 -2px 4px rgba(0,0,0,0.05);
+        }
+        
+        .filter-btn-full {
+            width: calc(100% - 6px);
+        }
+        
+        /* BUSCADOR */
+        .search-box {
+            width: 100%;
+            padding: 10px 14px;
+            border: 2px solid #e5e7eb;
+            border-radius: 6px;
+            font-size: 13px;
+            transition: all 0.3s;
+        }
+        
+        .search-box:focus {
+            outline: none;
+            border-color: #2563eb;
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+        }
+        
+        /* LEYENDA */
+        .legend {
+            display: flex;
+            gap: 10px;
+            margin-top: 8px;
+        }
+        
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 11px;
+            color: #6b7280;
+        }
+        
+        .legend-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            border: 2px solid white;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+        
+        /* CONTADOR DE RESULTADOS */
+        .results-counter {
+            background: #f3f4f6;
+            padding: 12px 15px;
+            font-size: 13px;
+            font-weight: 600;
+            color: #374151;
+            text-align: center;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+            border-bottom: 2px solid #e5e7eb;
+        }
+        
+        .results-counter .count {
+            color: #2563eb;
+            font-size: 16px;
+        }
+        
+        /* BOTÓN COLAPSAR */
+        .collapse-btn {
+            background: none;
+            border: none;
+            color: #6b7280;
+            cursor: pointer;
+            font-size: 11px;
+            padding: 0;
+            text-decoration: none;
+            font-weight: 600;
+        }
+        
+        .collapse-btn:hover {
+            color: #2563eb;
+        }
+        
+        .filters-collapsed {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease;
+        }
+        
+        .filters-expanded {
+            max-height: 2000px;
+            transition: max-height 0.5s ease;
+        }
+        
+        /* GRID DE FILTROS */
+        .filters-grid {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 4px;
+        }
+        
+        .filters-grid .filter-btn {
+            width: calc(50% - 4px);
+            font-size: 11px;
+            padding: 6px 10px;
+        }
+        
+        /* POPUPS DEL MAPA */
+        .leaflet-popup-content {
+            margin: 15px;
+            min-width: 280px;
+        }
+        
+        .popup-title {
+            font-weight: bold;
+            font-size: 16px;
+            margin-bottom: 10px;
+        }
+        
+        .popup-title.municipal {
+            color: #059669;
+        }
+        
+        .popup-title.privado {
+            color: #2563eb;
+        }
+        
+        .popup-info {
+            font-size: 13px;
+            line-height: 1.6;
+            margin: 5px 0;
+        }
+        
+        .popup-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 600;
+            margin-bottom: 10px;
+        }
+        
+        .popup-badge.municipal {
+            background: #d1fae5;
+            color: #065f46;
+        }
+        
+        .popup-badge.privado {
+            background: #dbeafe;
+            color: #1e40af;
+        }
+        
+        .deportes-tag {
+            display: inline-block;
+            background: #f3f4f6;
+            color: #374151;
+            padding: 2px 8px;
+            border-radius: 3px;
+            font-size: 11px;
+            margin: 2px;
+        }
+        
+        .rating {
+            color: #fbbf24;
+            font-weight: bold;
+        }
+
+        .count-badge {
+            display: inline-block;
+            background: #fef3c7;
+            color: #92400e;
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-size: 10px;
+            font-weight: 600;
+            margin-left: 5px;
+        }
+
+        /* RESPONSIVE */
+        @media (max-width: 768px) {
+            .main-container {
+                flex-direction: column;
+            }
+            
+            .sidebar {
+                width: 100%;
+                height: 40vh;
+            }
+            
+            .map-container {
+                height: 60vh;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1> Instalaciones Deportivas de Elche</h1>
+        <p><span id="total-municipales">14</span> Municipales + <span id="total-privadas">0</span> Privadas + <span id="total-tiendas">0</span> Tiendas = <span id="total-general">0</span> instalaciones</p>
+    </div>
+
+    <div class="main-container">
+        <!-- PANEL LATERAL IZQUIERDO -->
+        <div class="sidebar">
+            <!-- Contador de resultados -->
+            <div class="results-counter">
+                <div>Mostrando <span class="count" id="results-count">0</span> de <span id="total-instalaciones">0</span></div>
+            </div>
+
+            <!-- Buscador -->
+            <div class="filter-section">
+                <div class="filter-title">🔍 Buscar</div>
+                <input type="text" id="search-box" class="search-box" placeholder="Nombre o dirección...">
+            </div>
+
+            <!-- Filtro por tipo -->
+            <div class="filter-section">
+                <div class="filter-title">
+                     Tipo
+                </div>
+                <button class="filter-btn active" onclick="toggleTipo('todas')" id="btn-todas">
+                    <span>✓</span> Todas
+                </button>
+                <button class="filter-btn active" onclick="toggleTipo('municipal')" id="btn-tipo-municipal">
+                    <span>🟢</span> Municipales (14)
+                </button>
+                <button class="filter-btn active" onclick="toggleTipo('privado')" id="btn-tipo-privado">
+                    <span>🔵</span> Privadas (<span id="count-privadas">0</span>)
+                </button>
+                <button class="filter-btn active" onclick="toggleTipo('tienda')" id="btn-tipo-tienda">
+                    <span>🟡</span> Tiendas (<span id="count-tiendas">0</span>)
+                </button>
+            </div>
+
+            <!-- Filtros por categoría privada -->
+            <div class="filter-section">
+                <div class="filter-title">
+                    🔵 Categorías Privadas
+                    <button class="collapse-btn" onclick="toggleCollapse('categorias')">
+                        <span id="categorias-toggle-text">▶ Mostrar</span>
+                    </button>
+                </div>
+                <div id="categorias-filters-container" class="filters-collapsed">
+                    <div style="margin-bottom: 8px;">
+                        <button class="filter-btn active" onclick="toggleTodasCategorias()" id="btn-todas-categorias">
+                            <span>✓</span> Todas
+                        </button>
+                    </div>
+                    <div id="categorias-filters" class="filters-grid"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- MAPA A LA DERECHA -->
+        <div class="map-container">
+            <div id="map"></div>
+        </div>
+    </div>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="instalaciones_privadas.js"></script>
+    <script src="instalaciones_tiendas.js"></script> 
+    <script>
+        // ========== DATOS DE FILTROS ==========
+        const categoriasPrivadas = [
+            "artes_marciales",
+            "danza",
+            "deportes_generales",
+            "equitacion",
+            "escalada",
+            "fitness",
+            "golf",
+            "padel_tenis",
+            "piscinas",
+            "skating"
+        ];
+
+        // Nombres amigables para categorías
+        const nombresAmigables = {
+            'artes_marciales': 'Artes Marciales y Boxeo',
+            'danza': 'Danza',
+            'deportes_generales': 'Deportes Generales',
+            'equitacion': 'Equitación',
+            'escalada': 'Escalada',
+            'fitness': 'Fitness y Gimnasios',
+            'golf': 'Golf',
+            'padel_tenis': 'Pádel y Tenis',
+            'piscinas': 'Natación',
+            'skating': 'Skating'
+        };
+
+        // ========== INSTALACIONES MUNICIPALES ==========
+        const instalacionesMunicipales = [
+            {
+                nombre: 'Ciudad Deportiva Juan Ángel Romero',
+                direccion: 'Calle CONFRIDES, 2',
+                telefono: '96 665 81 70',
+                deportes: ['fútbol 11', 'rugby', 'fútbol 7', 'fútbol 8', 'hockey patines', 'frontenis', 'pelota', 'patinaje'],
+                lat: 38.2730319,
+                lng: -0.6742037,
+                tipo: 'municipal'
+            },
+            {
+                nombre: 'Pabellón Esperanza Lag',
+                direccion: 'Avenida Universitat d\'Elx, 86',
+                telefono: '966 658 124',
+                deportes: ['tenis', 'gimnasia rítmica', 'escalada', 'judo', 'tenis de mesa', 'voleibol', 'natación', 'balonmano', 'waterpolo', 'musculación', 'aerobic', 'baloncesto', 'fútbol sala'],
+                lat: 38.2734931,
+                lng: -0.6735787,
+                tipo: 'municipal'
+            },
+            {
+                nombre: 'Estadi Municipal d\'Atletisme Manolo Jaén',
+                direccion: 'Calle JOSÉ POMARES PERLASIA, 2',
+                telefono: '966 659 215',
+                deportes: ['atletismo'],
+                lat: 38.2765342,
+                lng: -0.6753152,
+                tipo: 'municipal'
+            },
+            {
+                nombre: 'Polideportivo Altabix',
+                direccion: 'Avenida Josefina Manresa Quesada, 12',
+                telefono: '965 42 46 45',
+                deportes: ['fútbol 11', 'fútbol 7', 'fútbol sala', 'tenis', 'balonmano'],
+                lat: 38.2757498,
+                lng: -0.718593,
+                tipo: 'municipal'
+            },
+            {
+                nombre: 'Parque Deportivo Emilio Villanueva',
+                direccion: 'Paseo de la Estación, 2',
+                telefono: '965 45 59 14',
+                deportes: ['balonmano', 'natación', 'waterpolo', 'fútbol sala', 'baloncesto'],
+                lat: 38.2764297,
+                lng: -0.7174854,
+                tipo: 'municipal'
+            },
+            {
+                nombre: 'Polideportivo Carrús',
+                direccion: 'Calle Victoria Kent, 28',
+                telefono: '966 658 239',
+                deportes: ['balonmano', 'natación', 'waterpolo', 'musculación', 'fútbol sala', 'fútbol 11', 'fútbol 7', 'fútbol 5'],
+                lat: 38.278666,
+                lng: -0.7081677,
+                tipo: 'municipal'
+            },
+            {
+                nombre: 'Polideportivo El Toscar',
+                direccion: 'Calle Sax, 3',
+                telefono: '966 658 269',
+                deportes: ['balonmano', 'musculación', 'aerobic', 'baloncesto', 'fútbol sala', 'tenis', 'petanca', 'frontenis', 'skate', 'escalada', 'natación', 'waterpolo'],
+                lat: 38.2757498,
+                lng: -0.718593,
+                tipo: 'municipal'
+            },
+            {
+                nombre: 'Polideportivo El Pla',
+                direccion: 'Calle Capitán Antonio Mena, 157',
+                telefono: '966 659 227',
+                deportes: ['balonmano', 'natación', 'waterpolo', 'fútbol sala', 'baloncesto'],
+                lat: 38.2556191,
+                lng: -0.7080504,
+                tipo: 'municipal'
+            },
+            {
+                nombre: 'Polideportivo Los Palmerales',
+                direccion: 'Calle Abogados de Atocha, 37',
+                telefono: '',
+                deportes: ['balonmano', 'fútbol sala', 'tenis', 'natación'],
+                lat: 38.2555,
+                lng: -0.7084,
+                tipo: 'municipal'
+            },
+            {
+                nombre: 'Polideportivo Isabel Fernández',
+                direccion: 'Calle Violeta, 26 (Torrellano)',
+                telefono: '965 68 34 62',
+                deportes: ['balonmano', 'natación', 'waterpolo', 'fútbol sala', 'fútbol 11', 'fútbol 7', 'baloncesto'],
+                lat: 38.2760976,
+                lng: -0.733555,
+                tipo: 'municipal'
+            },
+            {
+                nombre: 'Polideportivo El Altet',
+                direccion: 'Avenida de la Ciutat Esportiva, 9',
+                telefono: '965 687 771',
+                deportes: ['fútbol 11', 'fútbol 7', 'balonmano', 'baloncesto', 'fútbol sala', 'bádminton', 'voleibol', 'natación', 'waterpolo', 'tenis', 'gimnasia rítmica'],
+                lat: 38.2734647,
+                lng: -0.6377432,
+                tipo: 'municipal'
+            },
+            {
+                nombre: 'Polideportivo La Hoya',
+                direccion: 'Partida de La Hoya, P-2 - 3-A',
+                telefono: '966 658 049',
+                deportes: ['balonmano', 'fútbol sala', 'fútbol 7', 'fútbol 8', 'gimnasia rítmica', 'baloncesto', 'voleibol'],
+                lat: 38.2192452,
+                lng: -0.6858607,
+                tipo: 'municipal'
+            },
+            {
+                nombre: 'Polideportivo Las Bayas',
+                direccion: 'Calle La Festa, 11 (Las Bayas)',
+                telefono: '',
+                deportes: ['balonmano', 'fútbol sala', 'fútbol 7', 'baloncesto'],
+                lat: 38.2760,
+                lng: -0.7335,
+                tipo: 'municipal'
+            },
+            {
+                nombre: 'Polideportivo La Marina',
+                direccion: 'Calle Correos, 22 (La Marina)',
+                telefono: '965 41 94 10',
+                deportes: ['fútbol 11', 'fútbol 7', 'balonmano', 'baloncesto', 'fútbol sala', 'tenis'],
+                lat: 38.2693,
+                lng: -0.7456,
+                tipo: 'municipal'
+            }
+        ];
+
+        // ========== CREAR MAPA ==========
+        const map = L.map('map').setView([38.27, -0.70], 12);
+
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '© OpenStreetMap contributors',
+            maxZoom: 19
+        }).addTo(map);
+
+        // Almacenar todos los marcadores
+        let todosLosMarcadores = [];
+
+        // Estado de filtros
+        let filtrosActivos = {
+            tipo: {
+                municipal: true,
+                privado: true,
+                tienda: true
+            },
+            categorias: new Set(categoriasPrivadas),
+            busqueda: ''
+        };
+
+        // Crear iconos
+        function crearIcono(tipo, esDecathlon = false) {
+            if (esDecathlon) {
+                return L.divIcon({
+                    className: 'custom-marker',
+                    html: `<div style="background-color: white; width: 64px; height: 64px; border-radius: 50%; border: 3px solid white; box-shadow: 0 4px 12px rgba(0,0,0,0.3); display: flex; align-items: center; justify-content: center; padding: 6px;"><img src="https://cdn.sanity.io/images/rn4tswnp/production/7888d72512320428b5575cad5d27e8639d4c8fe3-1838x1525.jpg?h=320&auto=format&dpr=2" style="width: 100%; height: 100%; object-fit: contain;"/></div>`,
+                    iconSize: [64, 64],
+                    iconAnchor: [32, 32]
+                });
+            }
+            
+            const configs = {
+                'municipal': { color: '#86efac', emoji: '🏛️' },
+                'privado': { color: '#93c5fd', emoji: '🏢' },
+                'tienda': { color: '#fde68a', emoji: '🛒' }
+            };
+
+            const config = configs[tipo] || { color: '#6b7280', emoji: '🛒' };
+
+            return L.divIcon({
+                className: 'custom-marker',
+                html: `<div style="background-color: ${config.color}; width: 32px; height: 32px; border-radius: 50%; box-shadow: 0 2px 5px rgba(0,0,0,0.3); display: flex; align-items: center; justify-content: center;"><span style="font-size: 16px;">${config.emoji}</span></div>`,
+                iconSize: [32, 32],
+                iconAnchor: [16, 16]
+            });
+        }
+
+        // Añadir marcadores municipales
+        instalacionesMunicipales.forEach(inst => {
+            const deportesHTML = inst.deportes.map(d => 
+                `<span class="deportes-tag">${d}</span>`
+            ).join(' ');
+
+            const popupContent = `
+                <span class="popup-badge municipal">MUNICIPAL</span>
+                <div class="popup-title municipal">${inst.nombre}</div>
+                <div class="popup-info"><strong>📍</strong> ${inst.direccion}</div>
+                <div class="popup-info"><strong>📞</strong> ${inst.telefono || 'No disponible'}</div>
+                <div class="popup-info" style="margin-top: 10px;"><strong>⚽ Deportes:</strong></div>
+                <div style="margin-top: 5px;">${deportesHTML}</div>
+            `;
+
+            const marker = L.marker([inst.lat, inst.lng], { icon: crearIcono('municipal') })
+                .bindPopup(popupContent, { maxWidth: 320 });
+
+            marker.instalacionData = inst;
+            todosLosMarcadores.push(marker);
+            marker.addTo(map);
+        });
+
+        // Añadir marcadores privados
+        instalacionesPrivadas.forEach(inst => {
+            const ratingHTML = inst.rating ? 
+                `<div class="popup-info"><strong>⭐</strong> <span class="rating">${inst.rating}</span></div>` : '';
+            
+            const countBadge = inst.count && inst.count > 1 ? 
+                `<span class="count-badge">${inst.count} instalaciones</span>` : '';
+
+            const popupContent = `
+                <span class="popup-badge privado">PRIVADO</span>${countBadge}
+                <div class="popup-title privado">${inst.nombre}</div>
+                <div class="popup-info"><strong>📍</strong> ${inst.direccion}</div>
+                <div class="popup-info"><strong>🏷️</strong> ${inst.categoria}</div>
+                ${ratingHTML}
+            `;
+
+            const marker = L.marker([inst.lat, inst.lng], { icon: crearIcono('privado') })
+                .bindPopup(popupContent, { maxWidth: 320 });
+
+            marker.instalacionData = inst;
+            todosLosMarcadores.push(marker);
+            marker.addTo(map);
+        });
+
+        // Añadir marcadores de tiendas
+        instalacionesTiendas.forEach(inst => {
+            const ratingHTML = inst.rating ? 
+                `<div class="popup-info"><strong>⭐</strong> <span class="rating">${inst.rating}</span></div>` : '';
+
+            const popupContent = `
+                <span class="popup-badge" style="background: #e5e7eb; color: #374151;">TIENDA</span>
+                <div class="popup-title" style="color: #6b7280;">${inst.nombre}</div>
+                <div class="popup-info"><strong>📍</strong> ${inst.direccion}</div>
+                <div class="popup-info"><strong>🏷️</strong> ${inst.categoria.replace('tienda_', '').replace('_', ' ')}</div>
+                ${ratingHTML}
+            `;
+
+            const esDecathlon = inst.nombre.includes('Decathlon');
+            const marker = L.marker([inst.lat, inst.lng], { icon: crearIcono('tienda', esDecathlon) })
+                .bindPopup(popupContent, { maxWidth: 320 });
+
+            marker.instalacionData = inst;
+            todosLosMarcadores.push(marker);
+            marker.addTo(map);
+        });
+
+        // Generar botones de filtro
+        function generarFiltrosCategorias() {
+            const container = document.getElementById('categorias-filters');
+            categoriasPrivadas.forEach(cat => {
+                const btn = document.createElement('button');
+                btn.className = 'filter-btn active';
+                btn.id = `cat-${cat}`;
+                btn.innerHTML = nombresAmigables[cat] || cat;
+                btn.onclick = () => toggleCategoria(cat);
+                container.appendChild(btn);
+            });
+        }
+
+
+        generarFiltrosCategorias();
+
+
+        // Funciones de filtrado
+        function toggleTipo(tipo) {
+            if (tipo === 'todas') {
+                filtrosActivos.tipo.municipal = true;
+                filtrosActivos.tipo.privado = true;
+                filtrosActivos.tipo.tienda = true;
+                document.getElementById('btn-tipo-municipal').classList.add('active');
+                document.getElementById('btn-tipo-privado').classList.add('active');
+                document.getElementById('btn-tipo-tienda').classList.add('active'); 
+            } else {
+                filtrosActivos.tipo[tipo] = !filtrosActivos.tipo[tipo];
+                document.getElementById(`btn-tipo-${tipo}`).classList.toggle('active');
+            }
+            aplicarFiltros();
+        }
+
+        function toggleCategoria(cat) {
+            const btn = document.getElementById(`cat-${cat}`);
+            if (filtrosActivos.categorias.has(cat)) {
+                filtrosActivos.categorias.delete(cat);
+                btn.classList.remove('active');
+            } else {
+                filtrosActivos.categorias.add(cat);
+                btn.classList.add('active');
+            }
+            aplicarFiltros();
+        }
+
+        function toggleTodasCategorias() {
+            // Verificar si todas están activas
+            const todasActivas = filtrosActivos.categorias.size === categoriasPrivadas.length;
+            
+            if (todasActivas) {
+                // Desactivar todas
+                filtrosActivos.categorias.clear();
+                categoriasPrivadas.forEach(cat => {
+                    const btn = document.getElementById(`cat-${cat}`);
+                    btn.classList.remove('active');
+                });
+            } else {
+                // Activar todas
+                filtrosActivos.categorias = new Set(categoriasPrivadas);
+                categoriasPrivadas.forEach(cat => {
+                    const btn = document.getElementById(`cat-${cat}`);
+                    btn.classList.add('active');
+                });
+            }
+            
+            aplicarFiltros();
+        }
+
+        function toggleCollapse(seccion) {
+            const container = document.getElementById(`${seccion}-filters-container`);
+            const text = document.getElementById(`${seccion}-toggle-text`);
+            
+            if (container.classList.contains('filters-expanded')) {
+                container.classList.remove('filters-expanded');
+                container.classList.add('filters-collapsed');
+                text.textContent = '▶ Mostrar';
+            } else {
+                container.classList.remove('filters-collapsed');
+                container.classList.add('filters-expanded');
+                text.textContent = '▼ Ocultar';
+            }
+        }
+
+        // Buscador
+        document.getElementById('search-box').addEventListener('input', (e) => {
+            filtrosActivos.busqueda = e.target.value.toLowerCase();
+            aplicarFiltros();
+        });
+
+        function aplicarFiltros() {
+            let count = 0;
+
+            todosLosMarcadores.forEach(marker => {
+                const inst = marker.instalacionData;
+                let mostrar = true;
+
+                // Filtro por tipo
+                if (!filtrosActivos.tipo[inst.tipo]) {
+                    mostrar = false;
+                }
+
+                // Filtro por categoría (solo privadas)
+                if (mostrar && inst.tipo === 'privado') {
+                    const categorias = inst.categoria.split(',').map(c => c.trim());
+                    const tieneCategoria = categorias.some(c => filtrosActivos.categorias.has(c));
+                    if (!tieneCategoria) {
+                        mostrar = false;
+                    }
+                }
+
+                // Filtro por búsqueda
+                if (mostrar && filtrosActivos.busqueda) {
+                    const nombreMatch = inst.nombre.toLowerCase().includes(filtrosActivos.busqueda);
+                    const direccionMatch = inst.direccion.toLowerCase().includes(filtrosActivos.busqueda);
+                    if (!nombreMatch && !direccionMatch) {
+                        mostrar = false;
+                    }
+                }
+
+                // Mostrar u ocultar marcador
+                if (mostrar) {
+                    marker.addTo(map);
+                    count++;
+                } else {
+                    map.removeLayer(marker);
+                }
+            });
+
+            // Actualizar contador
+            document.getElementById('results-count').textContent = count;
+        }
+
+        // Ajustar vista inicial
+        const allLayers = todosLosMarcadores;
+        if (allLayers.length > 0) {
+            const group = L.featureGroup(allLayers);
+            map.fitBounds(group.getBounds().pad(0.05));
+        }
+
+        console.log(`✅ Mapa cargado: ${instalacionesMunicipales.length} municipales + ${instalacionesPrivadas.length} privadas`);
+
+        // Actualizar contadores dinámicamente
+        const totalMunicipales = instalacionesMunicipales.length;
+        const totalPrivadas = instalacionesPrivadas.length;
+        const totalTiendas = instalacionesTiendas.length;  // AÑADIR
+        const totalGeneral = totalMunicipales + totalPrivadas + totalTiendas;  // MODIFICAR
+
+        document.getElementById('total-municipales').textContent = totalMunicipales;
+        document.getElementById('total-privadas').textContent = totalPrivadas;
+        document.getElementById('total-tiendas').textContent = totalTiendas;  // AÑADIR
+        document.getElementById('total-general').textContent = totalGeneral;
+        document.getElementById('total-instalaciones').textContent = totalGeneral;
+        document.getElementById('count-privadas').textContent = totalPrivadas;
+        document.getElementById('count-tiendas').textContent = totalTiendas;  // AÑADIR
+        document.getElementById('results-count').textContent = totalGeneral;
+
+        console.log(`✅ Mapa cargado: ${totalMunicipales} municipales + ${totalPrivadas} privadas + ${totalTiendas} tiendas = ${totalGeneral} total`);
+    </script>
+</body>
+</html>
