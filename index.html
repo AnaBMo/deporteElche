@@ -924,20 +924,56 @@
 
         function aplicarFiltros() {
             let count = 0;
+            
+            // Si hay búsqueda activa, activar temporalmente todos los tipos
+            const hayBusqueda = filtrosActivos.busqueda.length > 0;
+            const tiposOriginales = { ...filtrosActivos.tipo };
+            
+            if (hayBusqueda) {
+                filtrosActivos.tipo.municipal = true;
+                filtrosActivos.tipo.privado = true;
+                filtrosActivos.tipo.tienda = true;
+            }
 
             todosLosMarcadores.forEach(marker => {
                 const inst = marker.instalacionData;
                 let mostrar = true;
 
-                // Decathlon siempre visible
+                // Filtro por búsqueda (aplicar primero a todos)
+                if (filtrosActivos.busqueda) {
+                    const nombreMatch = inst.nombre.toLowerCase().includes(filtrosActivos.busqueda);
+                    const direccionMatch = inst.direccion.toLowerCase().includes(filtrosActivos.busqueda);
+                    
+                    // Para municipales, también buscar en deportes
+                    let deportesMatch = false;
+                    if (inst.deportes && Array.isArray(inst.deportes)) {
+                        deportesMatch = inst.deportes.some(d => d.toLowerCase().includes(filtrosActivos.busqueda));
+                    }
+                    
+                    // Para privadas y tiendas, también buscar en categoría
+                    let categoriaMatch = false;
+                    if (inst.categoria) {
+                        categoriaMatch = inst.categoria.toLowerCase().includes(filtrosActivos.busqueda);
+                    }
+                    
+                    if (!nombreMatch && !direccionMatch && !deportesMatch && !categoriaMatch) {
+                        mostrar = false;
+                    }
+                }
+
+                // Decathlon siempre visible (si pasa el filtro de búsqueda)
                 if (inst.nombre.includes('Decathlon')) {
-                    marker.addTo(map);
-                    count++;
-                    return; // Saltar al siguiente marcador
+                    if (mostrar) {
+                        marker.addTo(map);
+                        count++;
+                    } else {
+                        map.removeLayer(marker);
+                    }
+                    return;
                 }
 
                 // Filtro por tipo
-                if (!filtrosActivos.tipo[inst.tipo]) {
+                if (mostrar && !filtrosActivos.tipo[inst.tipo]) {
                     mostrar = false;
                 }
 
@@ -959,15 +995,6 @@
                     }
                 }
 
-                // Filtro por búsqueda
-                if (mostrar && filtrosActivos.busqueda) {
-                    const nombreMatch = inst.nombre.toLowerCase().includes(filtrosActivos.busqueda);
-                    const direccionMatch = inst.direccion.toLowerCase().includes(filtrosActivos.busqueda);
-                    if (!nombreMatch && !direccionMatch) {
-                        mostrar = false;
-                    }
-                }
-
                 // Mostrar u ocultar marcador
                 if (mostrar) {
                     marker.addTo(map);
@@ -976,6 +1003,11 @@
                     map.removeLayer(marker);
                 }
             });
+
+            // Restaurar filtros originales si había búsqueda
+            if (hayBusqueda) {
+                filtrosActivos.tipo = tiposOriginales;
+            }
 
             // Actualizar contador
             document.getElementById('results-count').textContent = count;
