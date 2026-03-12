@@ -490,6 +490,31 @@
             'tienda_nutricion': 'Nutrición Deportiva'
         };
 
+        // Función para contar instalaciones por categoría
+        function contarPorCategoria(tipo) {
+            const contadores = {};
+            
+            if (tipo === 'privado') {
+                categoriasPrivadas.forEach(cat => contadores[cat] = 0);
+                instalacionesPrivadas.forEach(inst => {
+                    const categorias = inst.categoria.split(',').map(c => c.trim());
+                    categorias.forEach(cat => {
+                        if (contadores[cat] !== undefined) contadores[cat]++;
+                    });
+                });
+            } else if (tipo === 'tienda') {
+                categoriasTiendas.forEach(cat => contadores[cat] = 0);
+                instalacionesTiendas.forEach(inst => {
+                    const categorias = inst.categoria.split(',').map(c => c.trim());
+                    categorias.forEach(cat => {
+                        if (contadores[cat] !== undefined) contadores[cat]++;
+                    });
+                });
+            }
+            
+            return contadores;
+        }
+
         // ========== INSTALACIONES MUNICIPALES ==========
         const instalacionesMunicipales = [
             {
@@ -742,11 +767,12 @@
         // Generar botones de filtro
         function generarFiltrosCategorias() {
             const container = document.getElementById('categorias-filters');
+            const contadores = contarPorCategoria('privado');
             categoriasPrivadas.forEach(cat => {
                 const btn = document.createElement('button');
                 btn.className = 'filter-btn active';
                 btn.id = `cat-${cat}`;
-                btn.innerHTML = nombresAmigables[cat] || cat;
+                btn.innerHTML = `${nombresAmigables[cat] || cat} (${contadores[cat]})`;
                 btn.onclick = () => toggleCategoria(cat, 'privado');
                 container.appendChild(btn);
             });
@@ -754,11 +780,12 @@
 
         function generarFiltrosCategoriasTiendas() {
             const container = document.getElementById('categorias-tiendas-filters');
+            const contadores = contarPorCategoria('tienda');
             categoriasTiendas.forEach(cat => {
                 const btn = document.createElement('button');
                 btn.className = 'filter-btn active';
                 btn.id = `cat-${cat}`;
-                btn.innerHTML = nombresAmigablesTiendas[cat] || cat;
+                btn.innerHTML = `${nombresAmigablesTiendas[cat] || cat} (${contadores[cat]})`;
                 btn.onclick = () => toggleCategoria(cat, 'tienda');
                 container.appendChild(btn);
             });
