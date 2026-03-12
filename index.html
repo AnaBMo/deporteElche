@@ -397,20 +397,32 @@
             </div>
 
             <!-- Filtros por categoría privada -->
-            <div class="filter-section">
-                <div class="filter-title">
-                    🔵 Categorías Privadas
-                    <button class="collapse-btn" onclick="toggleCollapse('categorias')">
-                        <span id="categorias-toggle-text">▶ Mostrar</span>
-                    </button>
-                </div>
-                <div id="categorias-filters-container" class="filters-collapsed">
+            <div class="filter-section" id="section-categorias-privadas" style="display: none;">
+            <div class="filter-title">
+                🔵 Categorías Privadas
+            </div>
+            <div id="categorias-filters-container">
                     <div style="margin-bottom: 8px;">
                         <button class="filter-btn active" onclick="toggleTodasCategorias()" id="btn-todas-categorias">
                             <span>✓</span> Todas
                         </button>
                     </div>
                     <div id="categorias-filters" class="filters-grid"></div>
+                </div>
+            </div>
+
+            <!-- Filtros por categoría tiendas -->
+            <div class="filter-section" id="section-categorias-tiendas" style="display: none;">
+                <div class="filter-title">
+                    🟡 Categorías Tiendas
+                </div>
+                <div id="categorias-tiendas-filters-container">
+                    <div style="margin-bottom: 8px;">
+                        <button class="filter-btn active" onclick="toggleTodasCategoriasTiendas()" id="btn-todas-categorias-tiendas">
+                            <span>✓</span> Todas
+                        </button>
+                    </div>
+                    <div id="categorias-tiendas-filters" class="filters-grid"></div>
                 </div>
             </div>
         </div>
@@ -439,6 +451,18 @@
             "skating"
         ];
 
+        const categoriasTiendas = [
+            "tienda_deportiva",
+            "tienda_running",
+            "tienda_ciclismo",
+            "tienda_padel",
+            "tienda_agua",
+            "tienda_golf",
+            "tienda_naturaleza",
+            "tienda_skate",
+            "tienda_nutricion"
+        ];
+
         // Nombres amigables para categorías
         const nombresAmigables = {
             'artes_marciales': 'Artes Marciales y Boxeo',
@@ -451,6 +475,18 @@
             'padel_tenis': 'Pádel y Tenis',
             'piscinas': 'Natación',
             'skating': 'Skating'
+        };
+
+        const nombresAmigablesTiendas = {
+            'tienda_deportiva': 'Deportiva',
+            'tienda_running': 'Running',
+            'tienda_ciclismo': 'Ciclismo',
+            'tienda_padel': 'Pádel',
+            'tienda_agua': 'Deportes Acuáticos',
+            'tienda_golf': 'Golf',
+            'tienda_naturaleza': 'Naturaleza y Caza',
+            'tienda_skate': 'Skate',
+            'tienda_nutricion': 'Nutrición Deportiva'
         };
 
         // ========== INSTALACIONES MUNICIPALES ==========
@@ -601,7 +637,8 @@
                 privado: false,
                 tienda: false
             },
-            categorias: new Set(categoriasPrivadas),
+            categoriasPrivadas: new Set(categoriasPrivadas),
+            categoriasTiendas: new Set(categoriasTiendas),
             busqueda: ''
         };
 
@@ -709,23 +746,33 @@
                 btn.className = 'filter-btn active';
                 btn.id = `cat-${cat}`;
                 btn.innerHTML = nombresAmigables[cat] || cat;
-                btn.onclick = () => toggleCategoria(cat);
+                btn.onclick = () => toggleCategoria(cat, 'privado');
                 container.appendChild(btn);
             });
         }
 
+        function generarFiltrosCategoriasTiendas() {
+            const container = document.getElementById('categorias-tiendas-filters');
+            categoriasTiendas.forEach(cat => {
+                const btn = document.createElement('button');
+                btn.className = 'filter-btn active';
+                btn.id = `cat-${cat}`;
+                btn.innerHTML = nombresAmigablesTiendas[cat] || cat;
+                btn.onclick = () => toggleCategoria(cat, 'tienda');
+                container.appendChild(btn);
+            });
+        }
 
         generarFiltrosCategorias();
+        generarFiltrosCategoriasTiendas();
 
 
         // Funciones de filtrado
         function toggleTipo(tipo) {
             if (tipo === 'todas') {
-                // Verificar si todas están activas
                 const todasActivas = filtrosActivos.tipo.municipal && filtrosActivos.tipo.privado && filtrosActivos.tipo.tienda;
                 
                 if (todasActivas) {
-                    // Desactivar todas
                     filtrosActivos.tipo.municipal = false;
                     filtrosActivos.tipo.privado = false;
                     filtrosActivos.tipo.tienda = false;
@@ -733,8 +780,10 @@
                     document.getElementById('btn-tipo-privado').classList.remove('active');
                     document.getElementById('btn-tipo-tienda').classList.remove('active');
                     document.getElementById('btn-todas').classList.remove('active');
+                    // Ocultar secciones de categorías
+                    document.getElementById('section-categorias-privadas').style.display = 'none';
+                    document.getElementById('section-categorias-tiendas').style.display = 'none';
                 } else {
-                    // Activar todas
                     filtrosActivos.tipo.municipal = true;
                     filtrosActivos.tipo.privado = true;
                     filtrosActivos.tipo.tienda = true;
@@ -742,10 +791,22 @@
                     document.getElementById('btn-tipo-privado').classList.add('active');
                     document.getElementById('btn-tipo-tienda').classList.add('active');
                     document.getElementById('btn-todas').classList.add('active');
+                    // Mostrar secciones de categorías
+                    document.getElementById('section-categorias-privadas').style.display = 'block';
+                    document.getElementById('section-categorias-tiendas').style.display = 'block';
                 }
             } else {
                 filtrosActivos.tipo[tipo] = !filtrosActivos.tipo[tipo];
                 document.getElementById(`btn-tipo-${tipo}`).classList.toggle('active');
+                
+                // Mostrar/ocultar sección de categorías según el tipo
+                if (tipo === 'privado') {
+                    document.getElementById('section-categorias-privadas').style.display = 
+                        filtrosActivos.tipo.privado ? 'block' : 'none';
+                } else if (tipo === 'tienda') {
+                    document.getElementById('section-categorias-tiendas').style.display = 
+                        filtrosActivos.tipo.tienda ? 'block' : 'none';
+                }
                 
                 // Actualizar botón "Todas"
                 const todasActivas = filtrosActivos.tipo.municipal && filtrosActivos.tipo.privado && filtrosActivos.tipo.tienda;
@@ -758,33 +819,52 @@
             aplicarFiltros();
         }
 
-        function toggleCategoria(cat) {
+        function toggleCategoria(cat, tipo) {
             const btn = document.getElementById(`cat-${cat}`);
-            if (filtrosActivos.categorias.has(cat)) {
-                filtrosActivos.categorias.delete(cat);
+            const categorias = tipo === 'privado' ? filtrosActivos.categoriasPrivadas : filtrosActivos.categoriasTiendas;
+            
+            if (categorias.has(cat)) {
+                categorias.delete(cat);
                 btn.classList.remove('active');
             } else {
-                filtrosActivos.categorias.add(cat);
+                categorias.add(cat);
                 btn.classList.add('active');
             }
             aplicarFiltros();
         }
 
         function toggleTodasCategorias() {
-            // Verificar si todas están activas
-            const todasActivas = filtrosActivos.categorias.size === categoriasPrivadas.length;
+            const todasActivas = filtrosActivos.categoriasPrivadas.size === categoriasPrivadas.length;
             
             if (todasActivas) {
-                // Desactivar todas
-                filtrosActivos.categorias.clear();
+                filtrosActivos.categoriasPrivadas.clear();
                 categoriasPrivadas.forEach(cat => {
                     const btn = document.getElementById(`cat-${cat}`);
                     btn.classList.remove('active');
                 });
             } else {
-                // Activar todas
-                filtrosActivos.categorias = new Set(categoriasPrivadas);
+                filtrosActivos.categoriasPrivadas = new Set(categoriasPrivadas);
                 categoriasPrivadas.forEach(cat => {
+                    const btn = document.getElementById(`cat-${cat}`);
+                    btn.classList.add('active');
+                });
+            }
+            
+            aplicarFiltros();
+        }
+
+        function toggleTodasCategoriasTiendas() {
+            const todasActivas = filtrosActivos.categoriasTiendas.size === categoriasTiendas.length;
+            
+            if (todasActivas) {
+                filtrosActivos.categoriasTiendas.clear();
+                categoriasTiendas.forEach(cat => {
+                    const btn = document.getElementById(`cat-${cat}`);
+                    btn.classList.remove('active');
+                });
+            } else {
+                filtrosActivos.categoriasTiendas = new Set(categoriasTiendas);
+                categoriasTiendas.forEach(cat => {
                     const btn = document.getElementById(`cat-${cat}`);
                     btn.classList.add('active');
                 });
@@ -833,10 +913,19 @@
                     mostrar = false;
                 }
 
-                // Filtro por categoría (solo privadas)
+                // Filtro por categoría (privadas)
                 if (mostrar && inst.tipo === 'privado') {
                     const categorias = inst.categoria.split(',').map(c => c.trim());
-                    const tieneCategoria = categorias.some(c => filtrosActivos.categorias.has(c));
+                    const tieneCategoria = categorias.some(c => filtrosActivos.categoriasPrivadas.has(c));
+                    if (!tieneCategoria) {
+                        mostrar = false;
+                    }
+                }
+
+                // Filtro por categoría (tiendas)
+                if (mostrar && inst.tipo === 'tienda' && !inst.nombre.includes('Decathlon')) {
+                    const categorias = inst.categoria.split(',').map(c => c.trim());
+                    const tieneCategoria = categorias.some(c => filtrosActivos.categoriasTiendas.has(c));
                     if (!tieneCategoria) {
                         mostrar = false;
                     }
