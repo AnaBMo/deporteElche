@@ -19,7 +19,7 @@
         }
         
         .header {
-            background: linear-gradient(135deg, #3643BA 0%, #3b82f6 100%);
+            background: #3643BA;
             color: white;
             padding: 15px 20px;
             text-align: center;
@@ -382,16 +382,16 @@
                 <div class="filter-title">
                      Tipo
                 </div>
-                <button class="filter-btn active" onclick="toggleTipo('todas')" id="btn-todas">
+                <button class="filter-btn" onclick="toggleTipo('todas')" id="btn-todas">
                     <span>✓</span> Todas
                 </button>
-                <button class="filter-btn active" onclick="toggleTipo('municipal')" id="btn-tipo-municipal">
+                <button class="filter-btn" onclick="toggleTipo('municipal')" id="btn-tipo-municipal">
                     <span>🟢</span> Municipales (14)
                 </button>
-                <button class="filter-btn active" onclick="toggleTipo('privado')" id="btn-tipo-privado">
+                <button class="filter-btn" onclick="toggleTipo('privado')" id="btn-tipo-privado">
                     <span>🔵</span> Privadas (<span id="count-privadas">0</span>)
                 </button>
-                <button class="filter-btn active" onclick="toggleTipo('tienda')" id="btn-tipo-tienda">
+                <button class="filter-btn" onclick="toggleTipo('tienda')" id="btn-tipo-tienda">
                     <span>🟡</span> Tiendas (<span id="count-tiendas">0</span>)
                 </button>
             </div>
@@ -597,9 +597,9 @@
         // Estado de filtros
         let filtrosActivos = {
             tipo: {
-                municipal: true,
-                privado: true,
-                tienda: true
+                municipal: false,
+                privado: false,
+                tienda: false
             },
             categorias: new Set(categoriasPrivadas),
             busqueda: ''
@@ -721,15 +721,39 @@
         // Funciones de filtrado
         function toggleTipo(tipo) {
             if (tipo === 'todas') {
-                filtrosActivos.tipo.municipal = true;
-                filtrosActivos.tipo.privado = true;
-                filtrosActivos.tipo.tienda = true;
-                document.getElementById('btn-tipo-municipal').classList.add('active');
-                document.getElementById('btn-tipo-privado').classList.add('active');
-                document.getElementById('btn-tipo-tienda').classList.add('active'); 
+                // Verificar si todas están activas
+                const todasActivas = filtrosActivos.tipo.municipal && filtrosActivos.tipo.privado && filtrosActivos.tipo.tienda;
+                
+                if (todasActivas) {
+                    // Desactivar todas
+                    filtrosActivos.tipo.municipal = false;
+                    filtrosActivos.tipo.privado = false;
+                    filtrosActivos.tipo.tienda = false;
+                    document.getElementById('btn-tipo-municipal').classList.remove('active');
+                    document.getElementById('btn-tipo-privado').classList.remove('active');
+                    document.getElementById('btn-tipo-tienda').classList.remove('active');
+                    document.getElementById('btn-todas').classList.remove('active');
+                } else {
+                    // Activar todas
+                    filtrosActivos.tipo.municipal = true;
+                    filtrosActivos.tipo.privado = true;
+                    filtrosActivos.tipo.tienda = true;
+                    document.getElementById('btn-tipo-municipal').classList.add('active');
+                    document.getElementById('btn-tipo-privado').classList.add('active');
+                    document.getElementById('btn-tipo-tienda').classList.add('active');
+                    document.getElementById('btn-todas').classList.add('active');
+                }
             } else {
                 filtrosActivos.tipo[tipo] = !filtrosActivos.tipo[tipo];
                 document.getElementById(`btn-tipo-${tipo}`).classList.toggle('active');
+                
+                // Actualizar botón "Todas"
+                const todasActivas = filtrosActivos.tipo.municipal && filtrosActivos.tipo.privado && filtrosActivos.tipo.tienda;
+                if (todasActivas) {
+                    document.getElementById('btn-todas').classList.add('active');
+                } else {
+                    document.getElementById('btn-todas').classList.remove('active');
+                }
             }
             aplicarFiltros();
         }
@@ -797,6 +821,13 @@
                 const inst = marker.instalacionData;
                 let mostrar = true;
 
+                // Decathlon siempre visible
+                if (inst.nombre.includes('Decathlon')) {
+                    marker.addTo(map);
+                    count++;
+                    return; // Saltar al siguiente marcador
+                }
+
                 // Filtro por tipo
                 if (!filtrosActivos.tipo[inst.tipo]) {
                     mostrar = false;
@@ -858,6 +889,8 @@
         document.getElementById('results-count').textContent = totalGeneral;
 
         console.log(`✅ Mapa cargado: ${totalMunicipales} municipales + ${totalPrivadas} privadas + ${totalTiendas} tiendas = ${totalGeneral} total`);
+        // Aplicar filtros iniciales para mostrar solo Decathlon
+        aplicarFiltros();
     </script>
 </body>
 </html>
