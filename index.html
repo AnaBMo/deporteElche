@@ -404,6 +404,9 @@
                 <button class="filter-btn" onclick="toggleTipo('playa')" id="btn-tipo-playa">
                     <span>🌊</span> Playas <span id="count-playas">0</span>
                 </button>
+                <button class="filter-btn" onclick="abrirRutas()" id="btn-rutas">
+                    <span>🥾</span> Rutas
+                </button>
             </div>
 
             <!-- Filtros por categoría privada -->
@@ -1077,6 +1080,11 @@
         console.log(`✅ Mapa cargado: ${totalMunicipales} municipales + ${totalPrivadas} privadas + ${totalTiendas} tiendas = ${totalGeneral} total`);
         // Aplicar filtros iniciales para mostrar solo Decathlon
         aplicarFiltros();
+
+        // Función para abrir rutas de Wikiloc
+        function abrirRutas() {
+            window.open('https://es.wikiloc.com/wikiloc/map.do?sw=38.223886681499245%2C-0.7789993286132814&ne=38.33048034320195%2C-0.5812454223632814&q=elche&page=1', '_blank');
+        }
     </script>
 </body>
 </html>
