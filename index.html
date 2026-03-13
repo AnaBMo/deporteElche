@@ -154,6 +154,12 @@
             border-color: #fde68a;
         }
 
+        .filter-btn.active#btn-tipo-playa {
+            background: #7dd3fc;
+            color: #0c4a6e;
+            border-color: #7dd3fc;
+        }
+
         .filter-btn.active#btn-todas {
             background: white;
             color: #374151;
@@ -361,7 +367,7 @@
 <body>
     <div class="header">
         <h1> Instalaciones Deportivas de Elche</h1>
-        <p><span id="total-municipales">14</span> Municipales + <span id="total-privadas">0</span> Privadas + <span id="total-tiendas">0</span> Tiendas = <span id="total-general">0</span> instalaciones</p>
+        <p><span id="total-municipales">14</span> Municipales + <span id="total-privadas">0</span> Privadas + <span id="total-tiendas">0</span> Tiendas + <span id="total-playas">0</span> Playas = <span id="total-general">0</span> instalaciones</p>
     </div>
 
     <div class="main-container">
@@ -394,6 +400,9 @@
                 </button>
                 <button class="filter-btn" onclick="toggleTipo('tienda')" id="btn-tipo-tienda">
                     <span>🟡</span> Tiendas <span id="count-tiendas">0</span>
+                </button>
+                <button class="filter-btn" onclick="toggleTipo('playa')" id="btn-tipo-playa">
+                    <span>🌊</span> Playas <span id="count-playas">0</span>
                 </button>
             </div>
 
@@ -437,6 +446,7 @@
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="instalaciones_privadas.js"></script>
     <script src="instalaciones_tiendas.js"></script> 
+    <script src="banderas_azules.js"></script>
     <script>
         // ========== DATOS DE FILTROS ==========
         const categoriasPrivadas = [
@@ -661,7 +671,8 @@
             tipo: {
                 municipal: false,
                 privado: false,
-                tienda: false
+                tienda: false,
+                playa: false
             },
             categoriasPrivadas: new Set(categoriasPrivadas),
             categoriasTiendas: new Set(categoriasTiendas),
@@ -682,7 +693,8 @@
             const configs = {
                 'municipal': { color: '#86efac', emoji: '🏛️' },
                 'privado': { color: '#93c5fd', emoji: '🏢' },
-                'tienda': { color: '#fde68a', emoji: '🛒' }
+                'tienda': { color: '#fde68a', emoji: '🛒' },
+                'playa': { color: 'white', emoji: '🌊️' } 
             };
 
             const config = configs[tipo] || { color: '#6b7280', emoji: '🛒' };
@@ -764,6 +776,23 @@
             marker.addTo(map);
         });
 
+        // Añadir marcadores de playas (DESPUÉS de los marcadores de tiendas)
+        banderasAzules.forEach(playa => {
+            const popupContent = `
+                <span class="popup-badge" style="background: #cffafe; color: #0e7490;">PLAYA BANDERA AZUL 2025</span>
+                <div class="popup-title" style="color: #0891b2;">${playa.nombre}</div>
+                <div class="popup-info"><strong>📍</strong> ${playa.municipio}</div>
+                <div class="popup-info"><strong>📏</strong> ${playa.distancia} km de Elche</div>
+            `;
+
+            const marker = L.marker([playa.lat, playa.lng], { icon: crearIcono('playa') })
+                .bindPopup(popupContent, { maxWidth: 320 });
+
+            marker.instalacionData = playa;
+            todosLosMarcadores.push(marker);
+            marker.addTo(map);
+        });
+
         // Generar botones de filtro
         function generarFiltrosCategorias() {
             const container = document.getElementById('categorias-filters');
@@ -798,15 +827,17 @@
         // Funciones de filtrado
         function toggleTipo(tipo) {
             if (tipo === 'todas') {
-                const todasActivas = filtrosActivos.tipo.municipal && filtrosActivos.tipo.privado && filtrosActivos.tipo.tienda;
+                const todasActivas = filtrosActivos.tipo.municipal && filtrosActivos.tipo.privado && filtrosActivos.tipo.tienda && filtrosActivos.tipo.playa;  // AÑADIR playa aquí
                 
                 if (todasActivas) {
                     filtrosActivos.tipo.municipal = false;
                     filtrosActivos.tipo.privado = false;
                     filtrosActivos.tipo.tienda = false;
+                    filtrosActivos.tipo.playa = false;  // AÑADIR esta línea
                     document.getElementById('btn-tipo-municipal').classList.remove('active');
                     document.getElementById('btn-tipo-privado').classList.remove('active');
                     document.getElementById('btn-tipo-tienda').classList.remove('active');
+                    document.getElementById('btn-tipo-playa').classList.remove('active');  // AÑADIR esta línea
                     document.getElementById('btn-todas').classList.remove('active');
                     // Ocultar secciones de categorías
                     document.getElementById('section-categorias-privadas').style.display = 'none';
@@ -815,9 +846,11 @@
                     filtrosActivos.tipo.municipal = true;
                     filtrosActivos.tipo.privado = true;
                     filtrosActivos.tipo.tienda = true;
+                    filtrosActivos.tipo.playa = true;  // AÑADIR esta línea
                     document.getElementById('btn-tipo-municipal').classList.add('active');
                     document.getElementById('btn-tipo-privado').classList.add('active');
                     document.getElementById('btn-tipo-tienda').classList.add('active');
+                    document.getElementById('btn-tipo-playa').classList.add('active');  // AÑADIR esta línea
                     document.getElementById('btn-todas').classList.add('active');
                     // Mostrar secciones de categorías
                     document.getElementById('section-categorias-privadas').style.display = 'block';
@@ -837,7 +870,7 @@
                 }
                 
                 // Actualizar botón "Todas"
-                const todasActivas = filtrosActivos.tipo.municipal && filtrosActivos.tipo.privado && filtrosActivos.tipo.tienda;
+                const todasActivas = filtrosActivos.tipo.municipal && filtrosActivos.tipo.privado && filtrosActivos.tipo.tienda && filtrosActivos.tipo.playa;  // AÑADIR playa aquí
                 if (todasActivas) {
                     document.getElementById('btn-todas').classList.add('active');
                 } else {
@@ -1025,16 +1058,20 @@
         // Actualizar contadores dinámicamente
         const totalMunicipales = instalacionesMunicipales.length;
         const totalPrivadas = instalacionesPrivadas.length;
-        const totalTiendas = instalacionesTiendas.length;  // AÑADIR
-        const totalGeneral = totalMunicipales + totalPrivadas + totalTiendas;  // MODIFICAR
+        const totalTiendas = instalacionesTiendas.length;  
+        const totalPlayas = banderasAzules.length;  
+        const totalGeneral = totalMunicipales + totalPrivadas + totalTiendas + totalPlayas;  
+
 
         document.getElementById('total-municipales').textContent = totalMunicipales;
         document.getElementById('total-privadas').textContent = totalPrivadas;
-        document.getElementById('total-tiendas').textContent = totalTiendas;  // AÑADIR
+        document.getElementById('total-tiendas').textContent = totalTiendas; 
         document.getElementById('total-general').textContent = totalGeneral;
         document.getElementById('total-instalaciones').textContent = totalGeneral;
         document.getElementById('count-privadas').textContent = totalPrivadas;
-        document.getElementById('count-tiendas').textContent = totalTiendas;  // AÑADIR
+        document.getElementById('count-tiendas').textContent = totalTiendas; 
+        document.getElementById('total-playas').textContent = totalPlayas;  
+        document.getElementById('count-playas').textContent = totalPlayas;  
         document.getElementById('results-count').textContent = totalGeneral;
 
         console.log(`✅ Mapa cargado: ${totalMunicipales} municipales + ${totalPrivadas} privadas + ${totalTiendas} tiendas = ${totalGeneral} total`);
