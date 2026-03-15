@@ -138,42 +138,61 @@
 
         .filter-btn.active#btn-tipo-municipal {
             background: #86efac;
-            color: #065f46;
+            color: #374151;
             border-color: #86efac;
         }
 
         .filter-btn.active#btn-tipo-privado {
             background: #93c5fd;
-            color: #1e3a8a;
+            color: #374151;
             border-color: #93c5fd;
         }
 
         .filter-btn.active#btn-tipo-tienda {
             background: #fde68a;
-            color: #78350f;
+            color: #374151;
             border-color: #fde68a;
         }
 
         .filter-btn.active#btn-tipo-playa {
-            background: #7dd3fc;
-            color: #0c4a6e;
-            border-color: #7dd3fc;
+            background: #d4eaf8;
+            color: #374151;
+            border-color: #bde1f7;
         }
 
         .filter-btn.active#btn-tipo-camping {
             background: #d9c8b0;
-            color: #aa6d49;
+            color: #374151;
             border-color: #d9c8b0;
         }
 
-        .filter-btn.active#btn-todas {
-            background: white;
-            color: #374151;
+        /* Estilo específico para botones de categorías privadas y tiendas */
+        .filters-grid .filter-btn.active {
+            background: #f3f4f6;
+            color: #0a2a5a;
             border-color: #d1d5db;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1), inset 0 -2px 4px rgba(0,0,0,0.05);
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
         }
 
-        .filter-btn.active#btn-todas-categorias {
+        /* Botones "Todas" de categorías con el mismo estilo gris */
+        #btn-todas-categorias.active,
+        #btn-todas-categorias-tiendas.active {
+            background: #f3f4f6 !important;
+            color: #374151 !important;
+            border-color: #d1d5db !important;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1) !important;
+        }
+
+        /* Botones "Todas" desactivados sin sombra */
+        #btn-todas-categorias:not(.active),
+        #btn-todas-categorias-tiendas:not(.active) {
+            background: white !important;
+            color: #374151 !important;
+            border-color: #e5e7eb !important;
+            box-shadow: none !important;
+        }
+
+        .filter-btn.active#btn-todas {
             background: white;
             color: #374151;
             border-color: #d1d5db;
@@ -888,7 +907,7 @@
                     filtrosActivos.tipo.privado = true;
                     filtrosActivos.tipo.tienda = true;
                     filtrosActivos.tipo.playa = true;
-                    filtrosActivos.tipo.camping = false;
+                    filtrosActivos.tipo.camping = true;
                     document.getElementById('btn-tipo-municipal').classList.add('active');
                     document.getElementById('btn-tipo-privado').classList.add('active');
                     document.getElementById('btn-tipo-tienda').classList.add('active');
@@ -939,6 +958,7 @@
 
         function toggleTodasCategorias() {
             const todasActivas = filtrosActivos.categoriasPrivadas.size === categoriasPrivadas.length;
+            const btnTodas = document.getElementById('btn-todas-categorias');
             
             if (todasActivas) {
                 filtrosActivos.categoriasPrivadas.clear();
@@ -946,12 +966,14 @@
                     const btn = document.getElementById(`cat-${cat}`);
                     btn.classList.remove('active');
                 });
+                btnTodas.classList.remove('active');  // ← AÑADIR ESTA LÍNEA
             } else {
                 filtrosActivos.categoriasPrivadas = new Set(categoriasPrivadas);
                 categoriasPrivadas.forEach(cat => {
                     const btn = document.getElementById(`cat-${cat}`);
                     btn.classList.add('active');
                 });
+                btnTodas.classList.add('active');  // ← AÑADIR ESTA LÍNEA
             }
             
             aplicarFiltros();
@@ -959,6 +981,7 @@
 
         function toggleTodasCategoriasTiendas() {
             const todasActivas = filtrosActivos.categoriasTiendas.size === categoriasTiendas.length;
+            const btnTodas = document.getElementById('btn-todas-categorias-tiendas');
             
             if (todasActivas) {
                 filtrosActivos.categoriasTiendas.clear();
@@ -966,12 +989,14 @@
                     const btn = document.getElementById(`cat-${cat}`);
                     btn.classList.remove('active');
                 });
+                btnTodas.classList.remove('active');  // ← AÑADIR ESTA LÍNEA
             } else {
                 filtrosActivos.categoriasTiendas = new Set(categoriasTiendas);
                 categoriasTiendas.forEach(cat => {
                     const btn = document.getElementById(`cat-${cat}`);
                     btn.classList.add('active');
                 });
+                btnTodas.classList.add('active');  // ← AÑADIR ESTA LÍNEA
             }
             
             aplicarFiltros();
