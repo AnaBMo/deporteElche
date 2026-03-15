@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Instalaciones Deportivas de Elche - Completo</title>
+    <title> Deporte y Naturaleza - Elche </title>
     <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🔵</text></svg>">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <style>
@@ -158,6 +158,12 @@
             background: #7dd3fc;
             color: #0c4a6e;
             border-color: #7dd3fc;
+        }
+
+        .filter-btn.active#btn-tipo-camping {
+            background: #d9c8b0;
+            color: #aa6d49;
+            border-color: #d9c8b0;
         }
 
         .filter-btn.active#btn-todas {
@@ -366,8 +372,8 @@
 </head>
 <body>
     <div class="header">
-        <h1> Instalaciones Deportivas de Elche</h1>
-        <p><span id="total-municipales">14</span> Municipales + <span id="total-privadas">0</span> Privadas + <span id="total-tiendas">0</span> Tiendas + <span id="total-playas">0</span> Playas = <span id="total-general">0</span> instalaciones</p>
+        <h1>  Deporte & Naturaleza | Elche </h1>
+        <p><span id="total-municipales">14</span> Municipales + <span id="total-privadas">0</span> Privadas + <span id="total-tiendas">0</span> Tiendas + <span id="total-playas">0</span> Playas + <span id="total-campings">0</span> Campings = <span id="total-general">0</span> instalaciones</p>
     </div>
 
     <div class="main-container">
@@ -403,6 +409,9 @@
                 </button>
                 <button class="filter-btn" onclick="toggleTipo('playa')" id="btn-tipo-playa">
                     <span>🌊</span> Playas <span id="count-playas">0</span>
+                </button>
+                <button class="filter-btn" onclick="toggleTipo('camping')" id="btn-tipo-camping">
+                    <span>⛺</span> Campings <span id="count-campings">0</span>
                 </button>
                 <button class="filter-btn" onclick="abrirRutas()" id="btn-rutas">
                     <span>🥾</span> Rutas
@@ -450,6 +459,7 @@
     <script src="instalaciones_privadas.js"></script>
     <script src="instalaciones_tiendas.js"></script> 
     <script src="banderas_azules.js"></script>
+    <script src="instalaciones_campings.js"></script>
     <script>
         // ========== DATOS DE FILTROS ==========
         const categoriasPrivadas = [
@@ -675,7 +685,8 @@
                 municipal: false,
                 privado: false,
                 tienda: false,
-                playa: false
+                playa: false,
+                camping: false
             },
             categoriasPrivadas: new Set(categoriasPrivadas),
             categoriasTiendas: new Set(categoriasTiendas),
@@ -697,7 +708,8 @@
                 'municipal': { color: '#86efac', emoji: '🏛️' },
                 'privado': { color: '#93c5fd', emoji: '🏢' },
                 'tienda': { color: '#fde68a', emoji: '🛒' },
-                'playa': { color: 'white', emoji: '🌊️' } 
+                'playa': { color: 'white', emoji: '🌊️' }, 
+                'camping': { color: '#d9c8b0', emoji: '⛺' }
             };
 
             const config = configs[tipo] || { color: '#6b7280', emoji: '🛒' };
@@ -779,7 +791,7 @@
             marker.addTo(map);
         });
 
-        // Añadir marcadores de playas (DESPUÉS de los marcadores de tiendas)
+        // Añadir marcadores de playas 
         banderasAzules.forEach(playa => {
             const popupContent = `
                 <span class="popup-badge" style="background: #cffafe; color: #0e7490;">PLAYA BANDERA AZUL 2025</span>
@@ -792,6 +804,30 @@
                 .bindPopup(popupContent, { maxWidth: 320 });
 
             marker.instalacionData = playa;
+            todosLosMarcadores.push(marker);
+            marker.addTo(map);
+        });
+
+        // Añadir marcadores de campings
+        instalacionesCampings.forEach(inst => {
+            const ratingHTML = inst.rating ? 
+                `<div class="popup-info"><strong>⭐</strong> <span class="rating">${inst.rating}</span></div>` : '';
+        
+            // Etiqueta según subcategoría
+            const etiqueta = inst.categoria === 'camping' ? 'CAMPING' : 'ÁREA AUTOCARAVANAS';
+            const colorFondo = inst.categoria === 'camping' ? '#f5ebe0' : '#fde68a';
+            
+            const popupContent = `
+                <span class="popup-badge" style="background: ${colorFondo}; color: #78350f;">${etiqueta}</span>
+                <div class="popup-title" style="color: #92400e;">${inst.nombre}</div>
+                <div class="popup-info"><strong>📍</strong> ${inst.direccion}</div>
+                ${ratingHTML}
+            `;
+        
+            const marker = L.marker([inst.lat, inst.lng], { icon: crearIcono('camping') })
+                .bindPopup(popupContent, { maxWidth: 320 });
+        
+            marker.instalacionData = inst;
             todosLosMarcadores.push(marker);
             marker.addTo(map);
         });
@@ -830,17 +866,19 @@
         // Funciones de filtrado
         function toggleTipo(tipo) {
             if (tipo === 'todas') {
-                const todasActivas = filtrosActivos.tipo.municipal && filtrosActivos.tipo.privado && filtrosActivos.tipo.tienda && filtrosActivos.tipo.playa;  // AÑADIR playa aquí
+                const todasActivas = filtrosActivos.tipo.municipal && filtrosActivos.tipo.privado && filtrosActivos.tipo.tienda && filtrosActivos.tipo.playa && filtrosActivos.tipo.camping;
                 
                 if (todasActivas) {
                     filtrosActivos.tipo.municipal = false;
                     filtrosActivos.tipo.privado = false;
                     filtrosActivos.tipo.tienda = false;
-                    filtrosActivos.tipo.playa = false;  // AÑADIR esta línea
+                    filtrosActivos.tipo.playa = false;
+                    filtrosActivos.tipo.camping = false;
                     document.getElementById('btn-tipo-municipal').classList.remove('active');
                     document.getElementById('btn-tipo-privado').classList.remove('active');
                     document.getElementById('btn-tipo-tienda').classList.remove('active');
-                    document.getElementById('btn-tipo-playa').classList.remove('active');  // AÑADIR esta línea
+                    document.getElementById('btn-tipo-playa').classList.remove('active');
+                    document.getElementById('btn-tipo-camping').classList.remove('active');
                     document.getElementById('btn-todas').classList.remove('active');
                     // Ocultar secciones de categorías
                     document.getElementById('section-categorias-privadas').style.display = 'none';
@@ -849,11 +887,13 @@
                     filtrosActivos.tipo.municipal = true;
                     filtrosActivos.tipo.privado = true;
                     filtrosActivos.tipo.tienda = true;
-                    filtrosActivos.tipo.playa = true;  // AÑADIR esta línea
+                    filtrosActivos.tipo.playa = true;
+                    filtrosActivos.tipo.camping = false;
                     document.getElementById('btn-tipo-municipal').classList.add('active');
                     document.getElementById('btn-tipo-privado').classList.add('active');
                     document.getElementById('btn-tipo-tienda').classList.add('active');
-                    document.getElementById('btn-tipo-playa').classList.add('active');  // AÑADIR esta línea
+                    document.getElementById('btn-tipo-playa').classList.add('active');
+                    document.getElementById('btn-tipo-camping').classList.add('active');
                     document.getElementById('btn-todas').classList.add('active');
                     // Mostrar secciones de categorías
                     document.getElementById('section-categorias-privadas').style.display = 'block';
@@ -873,7 +913,7 @@
                 }
                 
                 // Actualizar botón "Todas"
-                const todasActivas = filtrosActivos.tipo.municipal && filtrosActivos.tipo.privado && filtrosActivos.tipo.tienda && filtrosActivos.tipo.playa;  // AÑADIR playa aquí
+                const todasActivas = filtrosActivos.tipo.municipal && filtrosActivos.tipo.privado && filtrosActivos.tipo.tienda && filtrosActivos.tipo.playa && filtrosActivos.tipo.camping;
                 if (todasActivas) {
                     document.getElementById('btn-todas').classList.add('active');
                 } else {
@@ -1063,7 +1103,8 @@
         const totalPrivadas = instalacionesPrivadas.length;
         const totalTiendas = instalacionesTiendas.length;  
         const totalPlayas = banderasAzules.length;  
-        const totalGeneral = totalMunicipales + totalPrivadas + totalTiendas + totalPlayas;  
+        const totalCampings = instalacionesCampings.length;
+        const totalGeneral = totalMunicipales + totalPrivadas + totalTiendas + totalPlayas + totalCampings;
 
 
         document.getElementById('total-municipales').textContent = totalMunicipales;
@@ -1074,7 +1115,9 @@
         document.getElementById('count-privadas').textContent = totalPrivadas;
         document.getElementById('count-tiendas').textContent = totalTiendas; 
         document.getElementById('total-playas').textContent = totalPlayas;  
-        document.getElementById('count-playas').textContent = totalPlayas;  
+        document.getElementById('count-playas').textContent = totalPlayas; 
+        document.getElementById('total-campings').textContent = totalCampings;
+        document.getElementById('count-campings').textContent = totalCampings; 
         document.getElementById('results-count').textContent = totalGeneral;
 
         console.log(`✅ Mapa cargado: ${totalMunicipales} municipales + ${totalPrivadas} privadas + ${totalTiendas} tiendas = ${totalGeneral} total`);
