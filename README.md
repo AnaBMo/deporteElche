@@ -1,4 +1,4 @@
-# 🏃 Deporte & Naturaleza | Elche
+# Deporte & Naturaleza | Elche
 
 Mapa interactivo que muestra instalaciones deportivas públicas, privadas, tiendas deportivas, playas con bandera azul y campings en Elche y alrededores.
 
@@ -88,11 +88,5 @@ Las contribuciones son bienvenidas. Si conoces alguna instalación deportiva, ti
 
 1. Abre un **Issue** con la información
 2. O envía un **Pull Request** con los datos actualizados
-
----
-
-## Licencia
-
-Este proyecto está bajo licencia MIT - ver el archivo LICENSE para más detalles.
 
 ---
